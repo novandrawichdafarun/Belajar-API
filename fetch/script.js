@@ -44,11 +44,39 @@
 //* Fetch (Refactoring)
 const searchButton = document.querySelector(".search-button");
 searchButton.addEventListener("click", async function () {
-  const inputKey = document.querySelector(".input-keyword");
-
-  const movies = await getMovies(inputKey.value);
-  updateUI(movies);
+  try {
+    const inputKey = document.querySelector(".input-keyword");
+    const movies = await getMovies(inputKey.value);
+    updateUI(movies);
+  } catch (error) {
+    // notFound(error);
+    console.log(error);
+  }
 });
+
+function getMovies(keyword) {
+  return fetch("https://www.omdbapi.com/?apikey=8770be96&s=" + keyword)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      return response.json();
+    })
+    .then((response) => {
+      if (response.Response === "False") {
+        // throw new Error(response.Eror);
+        notFound(response.Error);
+      }
+      return response.Search;
+    });
+}
+
+function updateUI(movies) {
+  let cards = "";
+  movies.forEach((m) => (cards += showCards(m)));
+  const movieContainer = document.querySelector(".movie-container");
+  movieContainer.innerHTML = cards;
+}
 
 //? Event binding tombol detail
 document.addEventListener("click", async function (e) {
@@ -62,8 +90,7 @@ document.addEventListener("click", async function (e) {
 function getMoviesDetail(id) {
   return fetch("https://www.omdbapi.com/?apikey=8770be96&i=" + id)
     .then((response) => response.json())
-    .then((m) => m)
-    .catch((response) => console.log(response));
+    .then((m) => m);
 }
 
 function updateUIDetail(m) {
@@ -72,31 +99,12 @@ function updateUIDetail(m) {
   modalBody.innerHTML = movieDetail;
 }
 
-function getMovies(keyword) {
-  return fetch("https://www.omdbapi.com/?apikey=8770be96&s=" + keyword)
-    .then((response) => response.json())
-    .then((response) => {
-      if (!response.Search) {
-        notFound();
-      }
-      return response.Search;
-    })
-    .catch((response) => console.log(response));
-}
-
-function notFound() {
+function notFound(error) {
   const movieContainer = document.querySelector(".movie-container");
   movieContainer.innerHTML = `
                             <div class="col">
-                              <h1 class="text-center text-danger">404 Movie not found!</h1>
+                              <h1 class="text-center text-danger">404 ${error}</h1>
                             </div>`;
-}
-
-function updateUI(movies) {
-  let cards = "";
-  movies.forEach((m) => (cards += showCards(m)));
-  const movieContainer = document.querySelector(".movie-container");
-  movieContainer.innerHTML = cards;
 }
 
 function showCards(m) {
